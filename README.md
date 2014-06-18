@@ -14,8 +14,7 @@ yapoet.py [options]
 
 Options:
   -h, --help            show this help message and exit
-  -u URL, --url=URL     Target URL (e.g. "http://host.domain/?param1=value%2b1
-                        &param2=value%2b2")
+  -u URL, --url=URL     Target URL (e.g. "http://host.domain/?param1=value%2b1&param2=value%2b2")
   -d ENCRYPTED_DATA, --decrypt=ENCRYPTED_DATA
                         Base64-encoded data to decrypt
   -e PLAINTEXT_DATA, --encrypt=PLAINTEXT_DATA
@@ -24,11 +23,9 @@ Options:
   --cookie=COOKIE       HTTP Cookie header value
   --block-size=BLOCK_SIZE
                         Cipher block size [default: 16]
-  --iv=IV               Initialization vector (e.g. "0x00,0x01,0x39...")
-                        [default: 0x00 * BLOCK_SIZE]
+  --iv=IV               Initialization vector (e.g. "0x00,0x01,0x39...") [default: 0x00 * BLOCK_SIZE]
   --mode=MODE           Mode of operation (e.g. "ECB" or "CBC") [default: CBC]
 
-Please note that the value of at least one of the HTTP-request parameters in
-the URL, POST_DATA or COOKIE options should be replaced with an
-%encrypted_data% placeholder.
+Please note that the value of at least one of the HTTP-request parameters in the URL, POST_DATA or COOKIE options should be
+replaced with an %encrypted_data% placeholder.
 ```
