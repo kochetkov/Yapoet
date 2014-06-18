@@ -7,7 +7,8 @@ python yapoet.py -u http://localhost:8080/ -d "aEMei5bwchHQqb6rh17Irg==" -e "<sc
 
 Usage
 =====
-```yapoet.py [options]
+```
+yapoet.py [options]
 
 Options:
   -h, --help            show this help message and exit
@@ -27,4 +28,5 @@ Options:
 
 Please note that the value of at least one of the HTTP-request parameters in
 the URL, POST_DATA or COOKIE options should be replaced with an
-%encrypted_data% placeholder.```
+%encrypted_data% placeholder.
+```
