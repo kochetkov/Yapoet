@@ -2,8 +2,10 @@ Yapoet
 ======
 
 Comprehensive description will be added later. Presently you can try to play with it against included example of a vulnerable web application:
-```\Examples\ASP.NET-Webforms\BuildAndRun.cmd
-python yapoet.py -u http://localhost:8080/ -d "aEMei5bwchHQqb6rh17Irg==" -e "<script>alert(/XSS/)</script>" --data="__VIEWSTATE=&Answer=&EncryptedAnswer=%encrypted_data%"```
+```
+\Examples\ASP.NET-Webforms\BuildAndRun.cmd
+python yapoet.py -u http://localhost:8080/ -d "aEMei5bwchHQqb6rh17Irg==" -e "<script>alert(/XSS/)</script>" --data="__VIEWSTATE=&Answer=&EncryptedAnswer=%encrypted_data%"
+```
 
 Usage
 =====
