@@ -96,7 +96,7 @@ if __name__ == "__main__":
     parser.add_option("-u", "--url", dest="url",
                       help="Target URL (e.g. \"http://host.domain/?param1=value%2b1&param2=value%2b2\")")
     parser.add_option("-d", "--decrypt", dest="encrypted_data", help="Base64-encoded data to decrypt")
-    parser.add_option("-e", "--encrypt", dest="plaintext_data", help="Plaintext data to encrypt")
+    parser.add_option("-e", "--encrypt", dest="plaintext_data", help="Plaintext data to encrypt (CBC mode only)")
     parser.add_option("--data", dest="post_data", help="POST data (e.g. \"param1=value%2b1&param2=value%2b1\")")
     parser.add_option("--cookie", dest="cookie", help="HTTP Cookie header value")
     parser.add_option("--block-size", dest="block_size", help="Cipher block size [default: %default]")
@@ -122,6 +122,9 @@ if __name__ == "__main__":
             print "Started decryption of '''%s'''" % options.encrypted_data
             print "\n\nData has been decrypted to '''%s''' via %s requests\n" % poet.decrypt_text(options.encrypted_data)
         if options.plaintext_data:
+            if options.mode != "CBC":
+                    print "Encryption is possible only in CBC mode"
+                    exit(errno.EINVAL)
             print "Started encryption of '''%s'''" % options.plaintext_data
             print "\n\nData has been encrypted to '''%s''' via %s requests" % poet.encrypt_text(options.plaintext_data)
     else:

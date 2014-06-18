@@ -17,7 +17,7 @@ Options:
   -d ENCRYPTED_DATA, --decrypt=ENCRYPTED_DATA
                         Base64-encoded data to decrypt
   -e PLAINTEXT_DATA, --encrypt=PLAINTEXT_DATA
-                        Plaintext data to encrypt
+                        Plaintext data to encrypt (CBC mode only)
   --data=POST_DATA      POST data (e.g. "param1=value%2b1&param2=value%2b1")
   --cookie=COOKIE       HTTP Cookie header value
   --block-size=BLOCK_SIZE
