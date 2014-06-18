@@ -6,7 +6,6 @@ Comprehensive description will be added later. Presently you can try to play wit
 \Examples\ASP.NET-Webforms\BuildAndRun.cmd
 python yapoet.py -u http://localhost:8080/ -d "aEMei5bwchHQqb6rh17Irg==" -e "<script>alert(/XSS/)</script>" --data="__VIEWSTATE=&Answer=&EncryptedAnswer=%encrypted_data%"
 ```
-
 Usage
 =====
 ```
