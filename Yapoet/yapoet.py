@@ -88,7 +88,7 @@ class Yapoet:
 
 if __name__ == "__main__":
 
-    print "YAPOET: Yet Another Padding Oracle Exploitation Tool v0.1.0"
+    print "YAPOET: Yet Another Padding Oracle Exploitation Tool v0.1.1"
     print "by Vladimir Kochetkov <kochetkov.vladimir@gmail.com>"
     print "https://github.com/kochetkov/Yapoet\n"
 
