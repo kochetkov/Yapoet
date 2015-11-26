@@ -97,7 +97,7 @@ class Yapoet:
 
 if __name__ == "__main__":
 
-    print "YAPOET: Yet Another Padding Oracle Exploitation Tool v0.2.0"
+    print "YAPOET: Yet Another Padding Oracle Exploitation Tool v0.2.1"
     print "by Vladimir Kochetkov <kochetkov.vladimir@gmail.com>"
     print "https://github.com/kochetkov/Yapoet\n"
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     parser.add_option("--block-size", dest="block_size", help="Cipher block size [default: %default]")
     parser.add_option("--iv", dest="iv",
                       help="Initialization vector (e.g. \"0x00,0x01,0x39...\") [default: 0x00 * BLOCK_SIZE]")
-    parser.add_option("--mode", dest="mode", help="Mode of operation (e.g. \"ECB\" or \"CBC\") [default: %default]")
+    parser.add_option("--mode", dest="mode", help="Mode of operation (\"CBC\") [default: %default]")
     parser.add_option("--encode-func", dest="encode_func",
                       help="Function to encode byte array data to string [default: %default]")
     parser.add_option("--decode-func", dest="decode_func",
@@ -132,8 +132,8 @@ if __name__ == "__main__":
                 exit(errno.EINVAL)
         else:
             options_iv = bytearray(b'\0' * options.block_size)
-        if options.mode != "ECB" and options.mode != "CBC":
-            print "Possible values for MODE are only \"ECB\" and \"CBC\""
+        if options.mode != "CBC":
+            print "Possible value for MODE is only \"CBC\""
             exit(errno.EINVAL)
         poet = Yapoet(options.url, options.post_data, options.cookie, options.block_size, options_iv, options.mode,
                       eval(options.encode_func), eval(options.decode_func))
