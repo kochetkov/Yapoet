@@ -120,7 +120,7 @@ namespace PaddingOracleExample.Application
 
             encryptor.BlockSize = 128;
             encryptor.Key = Encoding.ASCII.GetBytes("n73rna1$3(r37k3y");
-            encryptor.IV = new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            encryptor.IV = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
             encryptor.Mode = CipherMode.CBC;
             encryptor.Padding = PaddingMode.PKCS7;
 

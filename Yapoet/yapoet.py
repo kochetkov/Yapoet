@@ -85,13 +85,15 @@ def try_process_options(options):
 
 
 if __name__ == "__main__":
-    print("YAPOET: Yet Another Padding Oracle Exploitation Tool v0.3.0")
-    print("https://github.com/kochetkov/Yapoet")
-    print("by Vladimir Kochetkov <kochetkov.vladimir@gmail.com>")
-    print()
-    option_parser = optparse.OptionParser()
+    print("YAPOET: Yet Another Padding Oracle Exploitation Tool v0.3.0\n"
+          "https://github.com/kochetkov/Yapoet\n"
+          "by Vladimir Kochetkov <kochetkov.vladimir@gmail.com>\n")
+
+    description = ""
+    epilog = "Please note that the position of attacking data in URL, POST_DATA or COOKIE\n" \
+             "options should be picked by the %encrypted_data% placeholder"
+
+    option_parser = optparse.OptionParser(description=description, epilog=epilog)
 
     if not try_process_options(get_options(option_parser)):
         option_parser.print_help()
-        print("\nPlease note that the position of attacking data in URL, POST_DATA or COOKIE"
-              "\noptions should be picked by the %encrypted_data% placeholder")

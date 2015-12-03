@@ -5,7 +5,7 @@ from attackresult import AttackResult
 
 
 class CbcAttackEngine(AttackEngineBase):
-    def _decrypt_block_cbc(self, encrypted_block, verbose):
+    def _decrypt_block_cbc(self, encrypted_block):
         probing_bytes = bytearray(b'\0' * self._block_size + encrypted_block)
         intermediate_bytes = bytearray(b'\0' * self._block_size)
         byte_index = self._block_size - 1
@@ -19,13 +19,11 @@ class CbcAttackEngine(AttackEngineBase):
                 probes_count += 1
                 if self._is_valid_padding(probing_bytes):
                     intermediate_bytes[byte_index] = probing_bytes[byte_index] ^ padding_size
-                    if verbose:
-                        print("%02X " % intermediate_bytes[byte_index], end="", flush=True)
+                    print("%02X " % intermediate_bytes[byte_index], end="", flush=True)
                     break
                 else:
                     if probing_bytes[byte_index] == 0:
-                        if verbose:
-                            print("can't decrypt block")
+                        print("can't decrypt block")
                         return None
                     probing_bytes[byte_index] = probing_bytes[byte_index] + 1 if probing_bytes[byte_index] != 255 else 0
             byte_index -= 1
@@ -38,13 +36,13 @@ class CbcAttackEngine(AttackEngineBase):
         decrypted_index = 0
         block_index = len(encrypted_bytes) - self._block_size
         while block_index >= 0:
-            print("\nProcessing block #%02X: " % int(block_index / self._block_size), end="")
+            print("\nProcessing intermediate block #%02X: " % int(block_index / self._block_size), end="")
             cipher_block = encrypted_bytes[block_index: block_index + self._block_size]
             if block_index > 0:
                 prev_block = encrypted_bytes[block_index - self._block_size: block_index]
             else:
                 prev_block = self._iv
-            decrypted_block = self._decrypt_block_cbc(cipher_block, True)
+            decrypted_block = self._decrypt_block_cbc(cipher_block)
             if decrypted_block is None:
                 return None
             for idx, val in enumerate(decrypted_block):
@@ -55,11 +53,10 @@ class CbcAttackEngine(AttackEngineBase):
 
     def _encrypt_block_cbc(self, plain_block, iv):
         encrypted_block = bytearray(b'\0' * self._block_size)
-        decrypted_block = self._decrypt_block_cbc(iv, False)
+        decrypted_block = self._decrypt_block_cbc(iv)
         if decrypted_block is not None:
             for idx, val in enumerate(decrypted_block):
                 encrypted_block[idx] = val ^ plain_block[idx]
-                print("%02X " % encrypted_block[idx], end="", flush=True)
             return encrypted_block
         else:
             print("can't encrypt block")
@@ -73,7 +70,7 @@ class CbcAttackEngine(AttackEngineBase):
         block_index = len(padded_data) - self._block_size
         iv = bytearray(getrandbits(8) for _ in range(self._block_size))
         while block_index >= 0:
-            print("\nProcessing block #%02X: " % int(block_index / self._block_size), end="")
+            print("\nProcessing intermediate block #%02X: " % int(block_index / self._block_size), end="")
             encrypted_text = iv + encrypted_text
             iv = self._encrypt_block_cbc(padded_data[block_index: block_index + self._block_size], iv)
             if iv is None:
