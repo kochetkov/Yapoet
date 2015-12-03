@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="PaddingOracleExample.Application.Default" EnableEventValidation = "false" EnableViewState="False"%>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="PaddingOracleExample.Application.Default" EnableEventValidation = "False" EnableViewState="False"%>
 
 <!DOCTYPE html>
 

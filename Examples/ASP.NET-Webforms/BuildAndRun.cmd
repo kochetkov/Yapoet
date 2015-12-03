@@ -1,8 +1,8 @@
 rem @echo off
 
 if %PROCESSOR_ARCHITECTURE%==x86 (
-            set MSBuild="%ProgramFiles%\MSBuild\12.0\Bin\MSBuild.exe"
-) else (    set MSBuild="%ProgramFiles(x86)%\MSBuild\12.0\Bin\MSBuild.exe"
+            set MSBuild="%ProgramFiles%\MSBuild\14.0\Bin\MSBuild.exe"
+) else (    set MSBuild="%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe"
 )
 
 %MSBuild% Application.sln

