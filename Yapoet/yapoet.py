@@ -26,10 +26,10 @@ class Yapoet:
                                       urllib.parse.quote(self._encode_func(encrypted_data))) if s else ''
         url = specify(self._url)
         post_data = specify(self._post_data).encode()
-        cookies = urllib.parse.urlencode({"Cookie": specify(self._cookie)}).encode()
+        cookie = {"Cookie": specify(self._cookie)}
         try:
             self._requests_count += 1
-            urllib.request.urlopen(urllib.request.Request(url, post_data))
+            urllib.request.urlopen(urllib.request.Request(url, post_data, cookie))
             return True
         except urllib.error.HTTPError:
             return False
